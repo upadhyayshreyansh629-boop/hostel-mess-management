@@ -1,0 +1,474 @@
+{% load static %}
+
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Mess Expenses | Hostel Mess Management
+    </title>
+
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css"
+        rel="stylesheet"
+    >
+
+    <link rel="stylesheet" href="{% static 'mainapp/css/mess.css' %}">
+
+</head>
+
+
+<body class="bg-light d-flex flex-column min-vh-100">
+
+
+<nav class="navbar navbar-dark bg-dark">
+
+    <div class="container-fluid">
+
+        <a
+            href="{% url 'dashboard' %}"
+            class="navbar-brand fw-bold"
+        >
+            Hostel Mess Management
+        </a>
+
+
+        <div class="d-flex align-items-center gap-3">
+
+            <span class="text-white">
+                {{ request.user.username }}
+            </span>
+
+            <a
+                href="{% url 'admin_logout' %}"
+                class="btn btn-outline-light btn-sm"
+            >
+                Logout
+            </a>
+
+        </div>
+
+    </div>
+
+</nav>
+
+
+<div class="container-fluid py-4">
+
+
+    <!-- Header -->
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+
+        <div>
+
+            <h2 class="fw-bold mb-1">
+                Mess Expenses
+            </h2>
+
+            <p class="text-muted mb-0">
+                Manage food, labour and other expenses
+            </p>
+
+        </div>
+
+
+        <a
+            href="{% url 'expense_add' %}"
+            class="btn btn-primary"
+        >
+            + Add Expense
+        </a>
+
+    </div>
+
+
+    <!-- Messages -->
+
+    {% if messages %}
+
+        {% for message in messages %}
+
+            <div class="alert alert-{{ message.tags }}">
+                {{ message }}
+            </div>
+
+        {% endfor %}
+
+    {% endif %}
+
+
+    <!-- Summary Cards -->
+
+    <div class="row g-4 mb-4">
+
+
+        <div class="col-md-4">
+
+            <div class="card shadow-sm border-0">
+
+                <div class="card-body">
+
+                    <p class="text-muted mb-1">
+                        Food / Saman
+                    </p>
+
+                    <h3 class="fw-bold">
+                        ₹{{ total_food }}
+                    </h3>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="col-md-4">
+
+            <div class="card shadow-sm border-0">
+
+                <div class="card-body">
+
+                    <p class="text-muted mb-1">
+                        Labour
+                    </p>
+
+                    <h3 class="fw-bold">
+                        ₹{{ total_labour }}
+                    </h3>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="col-md-4">
+
+            <div class="card shadow-sm border-0">
+
+                <div class="card-body">
+
+                    <p class="text-muted mb-1">
+                        Other
+                    </p>
+
+                    <h3 class="fw-bold">
+                        ₹{{ total_other }}
+                    </h3>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- Filters -->
+
+    <div class="card shadow-sm border-0 mb-4">
+
+        <div class="card-body">
+
+            <form method="GET">
+
+                <div class="row g-3 align-items-end">
+
+
+                    <div class="col-md-4">
+
+                        <label class="form-label fw-semibold">
+                            Search
+                        </label>
+
+                        <input
+                            type="text"
+                            name="search"
+                            class="form-control"
+                            value="{{ search }}"
+                            placeholder="Search item or description..."
+                        >
+
+                    </div>
+
+
+                    <div class="col-md-3">
+
+                        <label class="form-label fw-semibold">
+                            Expense Type
+                        </label>
+
+                        <select
+                            name="expense_type"
+                            class="form-select"
+                        >
+
+                            <option value="">
+                                All Types
+                            </option>
+
+                            <option
+                                value="Food"
+                                {% if selected_type == "Food" %}
+                                    selected
+                                {% endif %}
+                            >
+                                Food / Saman
+                            </option>
+
+                            <option
+                                value="Labour"
+                                {% if selected_type == "Labour" %}
+                                    selected
+                                {% endif %}
+                            >
+                                Labour
+                            </option>
+
+                            <option
+                                value="Other"
+                                {% if selected_type == "Other" %}
+                                    selected
+                                {% endif %}
+                            >
+                                Other
+                            </option>
+
+                        </select>
+
+                    </div>
+
+
+                    <div class="col-md-3">
+
+                        <label class="form-label fw-semibold">
+                            Month
+                        </label>
+
+                        <input
+                            type="month"
+                            name="month"
+                            class="form-control"
+                            value="{{ selected_month }}"
+                        >
+
+                    </div>
+
+
+                    <div class="col-md-2 d-flex gap-2">
+
+                        <button
+                            type="submit"
+                            class="btn btn-dark"
+                        >
+                            Search
+                        </button>
+
+                        <a
+                            href="{% url 'expense_list' %}"
+                            class="btn btn-outline-secondary"
+                        >
+                            Reset
+                        </a>
+
+                    </div>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+
+    <!-- Expense Table -->
+
+    <div class="card shadow-sm border-0">
+
+        <div class="card-body p-0">
+
+            <div class="table-responsive">
+
+                <table class="table table-hover align-middle mb-0">
+
+                    <thead class="table-dark">
+
+                        <tr>
+
+                            <th>#</th>
+
+                            <th>Date</th>
+
+                            <th>Type</th>
+
+                            <th>Item / Expense</th>
+
+                            <th>Description</th>
+
+                            <th>Amount</th>
+
+                            <th>Action</th>
+
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody>
+
+                        {% for expense in expenses %}
+
+                            <tr>
+
+
+                                <td>
+                                    {{ forloop.counter }}
+                                </td>
+
+
+                                <td>
+                                    {{ expense.expense_date|date:"d M Y" }}
+                                </td>
+
+
+                                <td>
+
+                                    {% if expense.expense_type == "Food" %}
+
+                                        <span class="badge bg-success">
+                                            Food / Saman
+                                        </span>
+
+                                    {% elif expense.expense_type == "Labour" %}
+
+                                        <span class="badge bg-warning text-dark">
+                                            Labour
+                                        </span>
+
+                                    {% else %}
+
+                                        <span class="badge bg-secondary">
+                                            Other
+                                        </span>
+
+                                    {% endif %}
+
+                                </td>
+
+
+                                <td>
+
+                                    <strong>
+                                        {{ expense.item_name }}
+                                    </strong>
+
+                                </td>
+
+
+                                <td>
+
+                                    {% if expense.description %}
+
+                                        {{ expense.description }}
+
+                                    {% else %}
+
+                                        <span class="text-muted">
+                                            -
+                                        </span>
+
+                                    {% endif %}
+
+                                </td>
+
+
+                                <td>
+
+                                    <strong>
+                                        ₹{{ expense.amount }}
+                                    </strong>
+
+                                </td>
+
+
+                                <td>
+
+                                    <a
+                                        href="{% url 'expense_edit' expense.id %}"
+                                        class="btn btn-sm btn-outline-primary"
+                                    >
+                                        Edit
+                                    </a>
+
+                                </td>
+
+
+                            </tr>
+
+
+                        {% empty %}
+
+                            <tr>
+
+                                <td
+                                    colspan="7"
+                                    class="text-center py-5 text-muted"
+                                >
+                                    No expenses found.
+                                </td>
+
+                            </tr>
+
+                        {% endfor %}
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+</div>
+
+
+<script
+    src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"
+></script>
+
+
+<footer class="footer mt-5">
+    <div class="container-fluid">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-2">
+            <div>
+                <strong>Hostel Mess Management</strong>
+                <div class="footer-sub">Mess operations, attendance, fees and expense management</div>
+            </div>
+            <div class="footer-sub">
+                © 2026 · Developed by <strong>Shreyansh Upadhyay</strong>
+            </div>
+        </div>
+    </div>
+</footer>
+
+</body>
+
+</html>
+```

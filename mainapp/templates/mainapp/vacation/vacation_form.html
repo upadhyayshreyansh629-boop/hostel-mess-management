@@ -1,0 +1,57 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Add Mess Vacation | Hostel Mess Management</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'mainapp/css/mess.css' %}">
+</head>
+<body class="bg-light d-flex flex-column min-vh-100">
+<nav class="navbar navbar-dark"><div class="container-fluid">
+<a href="{% url 'dashboard' %}" class="navbar-brand fw-bold">Hostel Mess Management</a>
+<a href="{% url 'vacation_list' %}" class="btn btn-outline-light btn-sm">Back</a>
+</div></nav>
+
+<main class="container py-5 flex-grow-1">
+<div class="row justify-content-center"><div class="col-lg-7">
+<div class="card shadow-sm border-0">
+<div class="card-body p-4 p-md-5">
+<div class="eyebrow">Operations</div>
+<h2 class="fw-bold mb-1">Add Mess Vacation</h2>
+<p class="text-muted mb-4">During this period the mess will be treated as closed and attendance cannot be saved for those dates.</p>
+
+<form method="post">
+{% csrf_token %}
+<div class="row g-3">
+<div class="col-md-6">
+<label class="form-label fw-semibold">Start Date</label>
+<input type="date" name="start_date" class="form-control" value="{{ today|date:'Y-m-d' }}" required>
+</div>
+<div class="col-md-6">
+<label class="form-label fw-semibold">End Date</label>
+<input type="date" name="end_date" class="form-control" value="{{ today|date:'Y-m-d' }}" required>
+</div>
+<div class="col-12">
+<label class="form-label fw-semibold">Reason</label>
+<input type="text" name="reason" class="form-control" placeholder="e.g. Diwali Vacation / Summer Vacation" required>
+</div>
+<div class="col-12">
+<label class="form-label fw-semibold">Description</label>
+<textarea name="description" rows="4" class="form-control" placeholder="Optional details"></textarea>
+</div>
+</div>
+<div class="d-flex gap-2 mt-4">
+<button class="btn btn-primary">Save Vacation</button>
+<a href="{% url 'vacation_list' %}" class="btn btn-outline-secondary">Cancel</a>
+</div>
+</form>
+</div></div></div></div>
+</main>
+
+<footer class="footer"><div class="container-fluid"><div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-2">
+<div><strong>Hostel Mess Management</strong><div class="footer-sub">Mess operations, attendance, fees and expense management</div></div>
+<div class="footer-sub">© 2026 · Developed by <strong>Shreyansh Upadhyay</strong></div>
+</div></div></footer>
+</body></html>

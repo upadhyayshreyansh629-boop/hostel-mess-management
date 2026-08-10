@@ -1,0 +1,817 @@
+{% load static %}
+
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Monthly Bills | Hostel Mess Management
+    </title>
+
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css"
+        rel="stylesheet"
+    >
+
+    <link rel="stylesheet" href="{% static 'mainapp/css/mess.css' %}">
+
+</head>
+
+
+<body class="bg-light d-flex flex-column min-vh-100">
+
+
+<!-- =========================================================
+     NAVBAR
+========================================================= -->
+
+<nav class="navbar navbar-dark bg-dark shadow-sm mb-4">
+
+    <div class="container-fluid">
+
+        <a
+            href="{% url 'dashboard' %}"
+            class="navbar-brand fw-bold"
+        >
+            Hostel Mess Management
+        </a>
+
+
+        <div class="d-flex align-items-center gap-3">
+
+            <span class="text-white">
+                {{ request.user.username }}
+            </span>
+
+            <a
+                href="{% url 'admin_logout' %}"
+                class="btn btn-outline-light btn-sm"
+            >
+                Logout
+            </a>
+
+        </div>
+
+    </div>
+
+</nav>
+
+
+
+<!-- =========================================================
+     MAIN CONTAINER
+========================================================= -->
+
+<div class="container-fluid px-4">
+
+
+    <!-- =====================================================
+         HEADER
+    ====================================================== -->
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+
+        <div>
+
+            <h2 class="fw-bold mb-1">
+                Monthly Bills
+            </h2>
+
+            <p class="text-muted mb-0">
+                View and manage student-wise monthly mess bills
+            </p>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- =====================================================
+         MESSAGES
+    ====================================================== -->
+
+    {% if messages %}
+
+        {% for message in messages %}
+
+            <div
+                class="alert alert-{{ message.tags }} alert-dismissible fade show"
+                role="alert"
+            >
+
+                {{ message }}
+
+                <button
+                    type="button"
+                    class="btn-close"
+                    data-bs-dismiss="alert"
+                ></button>
+
+            </div>
+
+        {% endfor %}
+
+    {% endif %}
+
+
+
+    <!-- =====================================================
+         MONTH FILTER
+    ====================================================== -->
+
+    <div class="card shadow-sm border-0 mb-4">
+
+        <div class="card-body">
+
+            <div class="row g-3 align-items-end">
+
+
+                <!-- Select Month -->
+
+                <div class="col-md-4">
+
+                    <label class="form-label fw-semibold">
+                        Select Month
+                    </label>
+
+                    <form
+                        method="GET"
+                        action="{% url 'monthly_bill_list' %}"
+                    >
+
+                        <input
+                            type="month"
+                            name="month"
+                            class="form-control"
+                            value="{{ selected_month }}"
+                            required
+                        >
+
+                </div>
+
+
+
+                <!-- Show Bills -->
+
+                <div class="col-md-auto">
+
+                        <button
+                            type="submit"
+                            class="btn btn-dark"
+                        >
+                            Show Bills
+                        </button>
+
+                    </form>
+
+                </div>
+
+
+
+                <!-- Reset -->
+
+                <div class="col-md-auto">
+
+                    <a
+                        href="{% url 'monthly_bill_list' %}"
+                        class="btn btn-outline-secondary"
+                    >
+                        Reset
+                    </a>
+
+                </div>
+
+
+
+                <!-- Generate Monthly Bills -->
+
+                <div class="col-md-auto">
+
+                    <form
+                        method="POST"
+                        action="{% url 'generate_monthly_bills' %}"
+                        onsubmit="return confirm('Generate monthly bills for the selected month?');"
+                    >
+
+                        {% csrf_token %}
+
+                        <input
+                            type="hidden"
+                            name="month"
+                            value="{{ selected_month }}"
+                        >
+
+                        <button
+                            type="submit"
+                            class="btn btn-primary"
+                            {% if not selected_month %}disabled{% endif %}
+                        >
+                            Generate Monthly Bills
+                        </button>
+
+                    </form>
+
+                </div>
+
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- =====================================================
+         BILLS TABLE
+    ====================================================== -->
+
+    <div class="card shadow-sm border-0">
+
+        <div class="card-body p-0">
+
+            <div class="table-responsive">
+
+                <table
+                    class="table table-hover align-middle mb-0"
+                >
+
+                    <thead class="table-dark">
+
+                        <tr>
+
+                            <th>#</th>
+
+                            <th>Student</th>
+
+                            <th>Year</th>
+
+                            <th>Month</th>
+
+                            <th>Monthly Fee</th>
+
+                            <th>Food Cost</th>
+
+                            <th>Labour Cost</th>
+
+                            <th>Other Cost</th>
+
+                            <th>Absent Days</th>
+
+                            <th>Allowed Days</th>
+
+                            <th>Food Adjustment</th>
+
+                            <th>Final Amount</th>
+
+                            <th>Paid</th>
+
+                            <th>Extra Paid</th>
+
+                            <th>Balance</th>
+
+                            <th>Credit / Refund</th>
+
+                        </tr>
+
+                    </thead>
+
+
+
+                    <tbody>
+
+
+                    {% for bill in bills %}
+
+                        <tr>
+
+
+                            <!-- =================================
+                                 NUMBER
+                            ================================== -->
+
+                            <td>
+                                {{ forloop.counter }}
+                            </td>
+
+
+
+                            <!-- =================================
+                                 STUDENT
+                            ================================== -->
+
+                            <td>
+
+                                <strong>
+                                    {{ bill.student.name }}
+                                </strong>
+
+                                <br>
+
+                                <small class="text-muted">
+                                    {{ bill.student.student_id }}
+                                </small>
+
+                            </td>
+
+
+
+                            <!-- =================================
+                                 YEAR
+                            ================================== -->
+
+                            <td>
+                                {{ bill.student.year }}
+                            </td>
+
+
+
+                            <!-- =================================
+                                 MONTH
+                            ================================== -->
+
+                            <td>
+                                {{ bill.month|date:"F Y" }}
+                            </td>
+
+
+
+                            <!-- =================================
+                                 MONTHLY FEE
+                            ================================== -->
+
+                            <td>
+
+                                <strong>
+                                    ₹{{ bill.monthly_fee }}
+                                </strong>
+
+                            </td>
+
+
+
+                            <!-- =================================
+                                 FOOD COST
+                            ================================== -->
+
+                            <td>
+                                ₹{{ bill.food_cost }}
+                            </td>
+
+
+
+                            <!-- =================================
+                                 LABOUR COST
+                            ================================== -->
+
+                            <td>
+                                ₹{{ bill.labour_cost }}
+                            </td>
+
+
+
+                            <!-- =================================
+                                 OTHER COST
+                            ================================== -->
+
+                            <td>
+                                ₹{{ bill.other_cost }}
+                            </td>
+
+
+
+                            <!-- =================================
+                                 ABSENT DAYS
+                            ================================== -->
+
+                            <td>
+
+                                {% if bill.absent_days > 0 %}
+
+                                    <span class="badge bg-danger">
+                                        {{ bill.absent_days }}
+                                    </span>
+
+                                {% else %}
+
+                                    <span class="text-success">
+                                        0
+                                    </span>
+
+                                {% endif %}
+
+                            </td>
+
+
+
+                            <!-- =================================
+                                 ALLOWED ADJUSTMENT DAYS
+                            ================================== -->
+
+                            <td>
+
+                                {% if bill.food_adjustment > 0 %}
+
+                                    <span class="badge bg-success">
+                                        {{ bill.allowed_adjustment_days }}
+                                    </span>
+
+                                {% else %}
+
+                                    <span class="text-muted">
+                                        -
+                                    </span>
+
+                                {% endif %}
+
+                            </td>
+
+
+
+                            <!-- =================================
+                                 FOOD ADJUSTMENT
+                            ================================== -->
+
+                            <td>
+
+                                {% if bill.food_adjustment > 0 %}
+
+                                    <span class="text-success fw-semibold">
+
+                                        - ₹{{ bill.food_adjustment }}
+
+                                    </span>
+
+                                {% else %}
+
+                                    <span class="text-muted">
+                                        Not Applied
+                                    </span>
+
+                                {% endif %}
+
+                            </td>
+
+
+
+                            <!-- =================================
+                                 FINAL AMOUNT
+                            ================================== -->
+
+                            <td>
+
+                                <strong>
+                                    ₹{{ bill.final_amount }}
+                                </strong>
+
+                            </td>
+
+
+
+                            <!-- =================================
+                                 PAID AMOUNT
+                            ================================== -->
+
+                            <td>
+                                ₹{{ bill.paid_amount }}
+                            </td>
+
+
+
+                            <!-- =================================
+                                 EXTRA PAID
+                            ================================== -->
+
+                            <td>
+
+                                {% if bill.extra_paid > 0 %}
+
+                                    <span
+                                        class="text-warning fw-semibold"
+                                    >
+                                        ₹{{ bill.extra_paid }}
+                                    </span>
+
+                                {% else %}
+
+                                    <span class="text-muted">
+                                        ₹0.00
+                                    </span>
+
+                                {% endif %}
+
+                            </td>
+
+
+
+                            <!-- =================================
+                                 BALANCE
+                            ================================== -->
+
+                            <td>
+
+                                {% if bill.balance > 0 %}
+
+                                    <span
+                                        class="text-danger fw-semibold"
+                                    >
+                                        ₹{{ bill.balance }}
+                                    </span>
+
+                                {% else %}
+
+                                    <span
+                                        class="text-success fw-semibold"
+                                    >
+                                        Paid
+                                    </span>
+
+                                {% endif %}
+
+                            </td>
+
+
+
+                            <!-- =================================
+                                 CREDIT / REFUND ACTION
+                            ================================== -->
+
+                            <td>
+
+                                {% if bill.food_adjustment > 0 %}
+
+
+                                    <!-- Adjustment Applied -->
+
+                                    <span
+                                        class="badge bg-success mb-2"
+                                    >
+                                        Adjustment Applied
+                                    </span>
+
+
+                                    <!-- =================================
+                                         EXTRA PAYMENT EXISTS
+                                    ================================== -->
+
+                                    {% if bill.extra_paid > 0 %}
+
+
+                                        <div class="small mb-2">
+
+                                            <span
+                                                class="text-warning fw-semibold"
+                                            >
+                                                Extra Paid:
+                                                ₹{{ bill.extra_paid }}
+                                            </span>
+
+                                        </div>
+
+
+
+                                        <!-- =================================
+                                             REFUNDED
+                                        ================================== -->
+
+                                        {% if bill.credit_status == "Refunded" %}
+
+                                            <div>
+
+                                                <span
+                                                    class="badge bg-info"
+                                                >
+                                                    Refunded
+                                                </span>
+
+                                            </div>
+
+
+                                        <!-- =================================
+                                             CREDITED
+                                        ================================== -->
+
+                                        {% elif bill.credit_status == "Credited" %}
+
+                                            <div>
+
+                                                <span
+                                                    class="badge bg-primary"
+                                                >
+                                                    Next Month Credit
+                                                </span>
+
+                                            </div>
+
+
+                                        <!-- =================================
+                                             PENDING ACTION
+                                        ================================== -->
+
+                                        {% else %}
+
+
+                                            <!-- REFUND BUTTON -->
+
+                                            <form
+                                                method="POST"
+                                                action="{% url 'refund_credit' bill.id %}"
+                                                class="mb-2"
+                                                onsubmit="return confirm('Refund ₹{{ bill.extra_paid }} to this student?');"
+                                            >
+
+                                                {% csrf_token %}
+
+                                                <button
+                                                    type="submit"
+                                                    class="btn btn-sm btn-outline-danger w-100"
+                                                >
+                                                    Refund ₹{{ bill.extra_paid }}
+                                                </button>
+
+                                            </form>
+
+
+
+                                            <!-- NEXT MONTH CREDIT BUTTON -->
+
+                                           <form
+                                                method="POST"
+                                                 action="{% url 'next_month_credit' bill.id %}" 
+                                                onsubmit="return confirm('Add ₹{{ bill.extra_paid }} as next month credit?');"
+                                            >
+
+                                                {% csrf_token %}
+
+                                                <button
+                                                    type="submit"
+                                                    class="btn btn-sm btn-outline-primary w-100"
+                                                >
+                                                    Credit Next Month
+                                                </button>
+
+                                            </form> 
+
+
+                                        {% endif %}
+
+
+                                    {% endif %}
+
+
+
+                                <!-- =================================
+                                     ADJUSTMENT NOT APPLIED
+                                ================================== -->
+
+                                {% elif bill.absent_days > 0 %}
+
+
+                                    <form
+                                        method="POST"
+                                        action="{% url 'apply_food_adjustment' bill.id %}"
+                                        onsubmit="return confirm('Apply food adjustment for this student?');"
+                                    >
+
+                                        {% csrf_token %}
+
+                                        <button
+                                            type="submit"
+                                            class="btn btn-sm btn-outline-primary"
+                                        >
+                                            Apply Adjustment
+                                        </button>
+
+                                    </form>
+
+
+                                {% else %}
+
+
+                                    <span class="text-muted">
+                                        No Adjustment
+                                    </span>
+
+
+                                {% endif %}
+
+                            </td>
+
+
+                        </tr>
+
+
+                    {% empty %}
+
+
+                        <!-- =================================
+                             NO BILLS
+                        ================================== -->
+
+                        <tr>
+
+                            <td
+                                colspan="16"
+                                class="text-center py-5"
+                            >
+
+                                <h5 class="text-muted">
+                                    No monthly bills found
+                                </h5>
+
+                                <p class="text-muted mb-3">
+                                    Select a month and generate
+                                    monthly bills first.
+                                </p>
+
+
+                                {% if selected_month %}
+
+                                    <form
+                                        method="POST"
+                                        action="{% url 'generate_monthly_bills' %}"
+                                    >
+
+                                        {% csrf_token %}
+
+                                        <input
+                                            type="hidden"
+                                            name="month"
+                                            value="{{ selected_month }}"
+                                        >
+
+                                        <button
+                                            type="submit"
+                                            class="btn btn-primary"
+                                        >
+
+                                            Generate Bills for
+                                            {{ selected_month }}
+
+                                        </button>
+
+                                    </form>
+
+                                {% endif %}
+
+                            </td>
+
+                        </tr>
+
+
+                    {% endfor %}
+
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+</div>
+
+
+
+<!-- =========================================================
+     BOOTSTRAP JS
+========================================================= -->
+
+<script
+    src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"
+></script>
+
+
+
+<footer class="footer mt-5">
+    <div class="container-fluid">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-2">
+            <div>
+                <strong>Hostel Mess Management</strong>
+                <div class="footer-sub">Mess operations, attendance, fees and expense management</div>
+            </div>
+            <div class="footer-sub">
+                © 2026 · Developed by <strong>Shreyansh Upadhyay</strong>
+            </div>
+        </div>
+    </div>
+</footer>
+
+</body>
+
+</html>
+

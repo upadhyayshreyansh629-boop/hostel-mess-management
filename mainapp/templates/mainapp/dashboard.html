@@ -1,0 +1,193 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | Hostel Mess Management</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'mainapp/css/mess.css' %}">
+</head>
+
+<body class="bg-light d-flex flex-column min-vh-100">
+
+<nav class="navbar navbar-dark">
+    <div class="container-fluid">
+        <a href="{% url 'dashboard' %}" class="navbar-brand fw-bold">Hostel Mess Management</a>
+        <div class="d-flex align-items-center gap-2 gap-md-3">
+            <span class="text-white small">{{ request.user.get_full_name|default:request.user.username }}</span>
+            <a href="{% url 'admin_logout' %}" class="btn btn-outline-light btn-sm">Logout</a>
+        </div>
+    </div>
+</nav>
+
+<main class="container-fluid px-3 px-md-4 py-4 flex-grow-1">
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-end gap-3 mb-4">
+        <div class="page-heading mb-0">
+            <div class="eyebrow">Administration</div>
+            <h2 class="fw-bold mb-1">Dashboard</h2>
+            <p class="text-muted mb-0">Month-wise overview of mess operations and finances.</p>
+        </div>
+
+        <form method="get" class="card border-0 shadow-sm p-3">
+            <label class="form-label fw-semibold mb-1">Dashboard Month</label>
+            <div class="d-flex gap-2">
+                <input type="month" name="month" value="{{ selected_month }}" class="form-control">
+                <button class="btn btn-dark">Show</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="alert alert-light border shadow-sm d-flex justify-content-between align-items-center">
+        <div><strong>{{ selected_month_label }}</strong> — all figures below are for this month only.</div>
+        <a href="{% url 'vacation_list' %}" class="btn btn-sm btn-outline-primary">Mess Vacation</a>
+    </div>
+
+    {% if vacations %}
+    <div class="alert alert-warning border shadow-sm">
+        <strong>Mess vacation in {{ selected_month_label }}</strong>
+        <div class="mt-2">
+            {% for vacation in vacations %}
+                <span class="badge text-bg-warning me-1 mb-1">
+                    {{ vacation.start_date|date:"d M Y" }} – {{ vacation.end_date|date:"d M Y" }}
+                    {% if vacation.reason %} · {{ vacation.reason }}{% endif %}
+                </span>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="row g-4 mb-4">
+        <div class="col-sm-6 col-xl-3">
+            <a href="{% url 'student_list' %}" class="text-decoration-none">
+                <div class="card stat-card h-100"><div class="card-body p-4">
+                    <div class="module-icon mb-3">ST</div>
+                    <div class="stat-label">Active Students</div>
+                    <div class="stat-value text-dark">{{ total_students }}</div>
+                    <small class="text-primary fw-semibold">Manage students →</small>
+                </div></div>
+            </a>
+        </div>
+
+        <div class="col-sm-6 col-xl-3">
+            <a href="{% url 'fee_list' %}?month={{ selected_month }}" class="text-decoration-none">
+                <div class="card stat-card h-100"><div class="card-body p-4">
+                    <div class="module-icon mb-3">₹</div>
+                    <div class="stat-label">Fees Collected</div>
+                    <div class="stat-value text-dark">₹{{ total_fees }}</div>
+                    <small class="text-primary fw-semibold">Current month →</small>
+                </div></div>
+            </a>
+        </div>
+
+        <div class="col-sm-6 col-xl-3">
+            <a href="{% url 'expense_list' %}?month={{ selected_month }}&expense_type=Food" class="text-decoration-none">
+                <div class="card stat-card h-100"><div class="card-body p-4">
+                    <div class="module-icon mb-3">FD</div>
+                    <div class="stat-label">Food Expense</div>
+                    <div class="stat-value">₹{{ total_food_expense }}</div>
+                    <small class="text-muted">Food / Saman</small>
+                </div></div>
+            </a>
+        </div>
+
+        <div class="col-sm-6 col-xl-3">
+            <a href="{% url 'expense_list' %}?month={{ selected_month }}&expense_type=Labour" class="text-decoration-none">
+                <div class="card stat-card h-100"><div class="card-body p-4">
+                    <div class="module-icon mb-3">LB</div>
+                    <div class="stat-label">Labour Expense</div>
+                    <div class="stat-value">₹{{ total_labour_expense }}</div>
+                    <small class="text-muted">Staff / labour</small>
+                </div></div>
+            </a>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-md-4"><div class="card h-100"><div class="card-body p-4">
+            <div class="stat-label">Other Expense</div>
+            <div class="stat-value">₹{{ total_other_expense }}</div>
+        </div></div></div>
+        <div class="col-md-4"><div class="card h-100"><div class="card-body p-4">
+            <div class="stat-label">Refunds</div>
+            <div class="stat-value text-danger">₹{{ total_refunds }}</div>
+        </div></div></div>
+        <div class="col-md-4"><div class="card h-100"><div class="card-body p-4">
+            <div class="stat-label">Net Collection</div>
+            <div class="stat-value text-success">₹{{ net_collection }}</div>
+            <small class="text-muted">Current month collection after refunds</small>
+        </div></div></div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-body p-4">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+                <div>
+                    <h5 class="fw-bold mb-1">Quick Actions</h5>
+                    <p class="text-muted mb-0">Jump directly to common management modules.</p>
+                </div>
+                <div class="d-flex flex-wrap gap-2">
+                    <a href="{% url 'student_add' %}" class="btn btn-primary">+ Student</a>
+                    <a href="{% url 'fee_add' %}" class="btn btn-outline-primary">+ Payment</a>
+                    <a href="{% url 'expense_add' %}" class="btn btn-outline-primary">+ Expense</a>
+                    <a href="{% url 'attendance' %}" class="btn btn-outline-primary">Attendance</a>
+                    <a href="{% url 'monthly_bill_list' %}?month={{ selected_month }}" class="btn btn-outline-primary">Monthly Bills</a>
+                    <a href="{% url 'vacation_add' %}" class="btn btn-outline-primary">+ Vacation</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-md-4">
+            <a href="{% url 'expense_list' %}?month={{ selected_month }}" class="text-decoration-none">
+                <div class="card quick-card h-100"><div class="card-body p-4 d-flex align-items-center gap-3">
+                    <div class="module-icon">EX</div>
+                    <div><h5 class="fw-bold text-dark mb-1">Monthly Expenses</h5>
+                    <p class="text-muted mb-0">Only {{ selected_month_label }} expenses.</p></div>
+                </div></div>
+            </a>
+        </div>
+        <div class="col-md-4">
+            <a href="{% url 'monthly_bill_list' %}?month={{ selected_month }}" class="text-decoration-none">
+                <div class="card quick-card h-100"><div class="card-body p-4 d-flex align-items-center gap-3">
+                    <div class="module-icon">BL</div>
+                    <div><h5 class="fw-bold text-dark mb-1">Monthly Billing</h5>
+                    <p class="text-muted mb-0">Bills, adjustments and credits.</p></div>
+                </div></div>
+            </a>
+        </div>
+        <div class="col-md-4">
+            <a href="{% url 'vacation_list' %}" class="text-decoration-none">
+                <div class="card quick-card h-100"><div class="card-body p-4 d-flex align-items-center gap-3">
+                    <div class="module-icon">MV</div>
+                    <div><h5 class="fw-bold text-dark mb-1">Mess Vacation</h5>
+                    <p class="text-muted mb-0">Schedule mess closure dates.</p></div>
+                </div></div>
+            </a>
+        </div>
+    </div>
+</main>
+
+<footer class="footer">
+    <div class="container-fluid">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-2">
+            <div><strong>Hostel Mess Management</strong>
+                <div class="footer-sub">Mess operations, attendance, fees and expense management</div>
+            </div>
+            <div class="footer-sub">© 2026 · Developed by <strong>Shreyansh Upadhyay</strong></div>
+        </div>
+    </div>
+</footer>
+</body>
+</html>

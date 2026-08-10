@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: hostel-mess-management
+    runtime: python
+    buildCommand: "./build.sh"
+    startCommand: "gunicorn MMS.wsgi:application"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.13.6

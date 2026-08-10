@@ -1,0 +1,345 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        {% if student %}
+            Edit Student
+        {% else %}
+            Add Student
+        {% endif %}
+        | Hostel Mess Management
+    </title>
+
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css"
+        rel="stylesheet"
+    >
+
+    <link rel="stylesheet" href="{% static 'mainapp/css/mess.css' %}">
+
+</head>
+
+<body class="bg-light d-flex flex-column min-vh-100">
+
+
+<nav class="navbar navbar-dark bg-dark">
+
+    <div class="container-fluid">
+
+        <a
+            href="{% url 'dashboard' %}"
+            class="navbar-brand fw-bold"
+        >
+            Hostel Mess Management
+        </a>
+
+        <a
+            href="{% url 'student_list' %}"
+            class="btn btn-outline-light btn-sm"
+        >
+            Back to Students
+        </a>
+
+    </div>
+
+</nav>
+
+
+<div class="container py-5">
+
+    <div class="card shadow-sm border-0">
+
+        <div class="card-body p-4">
+
+            <h3 class="fw-bold mb-4">
+
+                {% if student %}
+                    Edit Student
+                {% else %}
+                    Add New Student
+                {% endif %}
+
+            </h3>
+
+
+            <form method="POST">
+
+                {% csrf_token %}
+
+
+                <div class="row g-3">
+
+                    <!-- Name -->
+
+                    <div class="col-md-6">
+
+                        <label class="form-label">
+                            Student Name
+                        </label>
+
+                        <input
+                            type="text"
+                            name="name"
+                            class="form-control"
+                            value="{{ student.name|default:'' }}"
+                            required
+                        >
+
+                    </div>
+
+
+                    <!-- Student ID -->
+
+                    <div class="col-md-6">
+
+                        <label class="form-label">
+                            Student ID / Roll No.
+                        </label>
+
+                        <input
+                            type="text"
+                            name="student_id"
+                            class="form-control"
+                            value="{{ student.student_id|default:'' }}"
+                            required
+                        >
+
+                    </div>
+
+
+                    <!-- Year -->
+
+                    <div class="col-md-4">
+
+                        <label class="form-label">
+                            Year
+                        </label>
+
+                        <select
+                            name="year"
+                            class="form-select"
+                            required
+                        >
+
+                            <option value="">
+                                Select Year
+                            </option>
+
+                            <option
+                                value="1st Year"
+                                {% if student.year == "1st Year" %}selected{% endif %}
+                            >
+                                1st Year
+                            </option>
+
+                            <option
+                                value="2nd Year"
+                                {% if student.year == "2nd Year" %}selected{% endif %}
+                            >
+                                2nd Year
+                            </option>
+
+                            <option
+                                value="3rd Year"
+                                {% if student.year == "3rd Year" %}selected{% endif %}
+                            >
+                                3rd Year
+                            </option>
+
+                        </select>
+
+                    </div>
+
+
+                    <!-- Branch -->
+
+                    <div class="col-md-4">
+
+                        <label class="form-label">
+                            Branch / Course
+                        </label>
+
+                        <input
+                            type="text"
+                            name="branch"
+                            class="form-control"
+                            value="{{ student.branch|default:'' }}"
+                            placeholder="e.g. IT"
+                        >
+
+                    </div>
+
+
+                    <!-- Room -->
+
+                    <div class="col-md-4">
+
+                        <label class="form-label">
+                            Room Number
+                        </label>
+
+                        <input
+                            type="text"
+                            name="room_no"
+                            class="form-control"
+                            value="{{ student.room_no|default:'' }}"
+                        >
+
+                    </div>
+
+
+                    <!-- Email -->
+
+                    <div class="col-md-6">
+
+                        <label class="form-label">
+                            Email
+                        </label>
+
+                        <input
+                            type="email"
+                            name="email"
+                            class="form-control"
+                            value="{{ student.email|default:'' }}"
+                            required
+                        >
+
+                    </div>
+
+
+                    <!-- Mobile -->
+
+                    <div class="col-md-6">
+
+                        <label class="form-label">
+                            Mobile Number
+                        </label>
+
+                        <input
+                            type="text"
+                            name="mobile"
+                            class="form-control"
+                            value="{{ student.mobile|default:'' }}"
+                        >
+
+                    </div>
+
+
+                    <!-- Joining Date -->
+
+                    <div class="col-md-4">
+
+                        <label class="form-label">
+                            Mess Joining Date
+                        </label>
+
+                        <input
+                            type="date"
+                            name="mess_joining_date"
+                            class="form-control"
+                            value="{{ student.mess_joining_date|date:'Y-m-d' }}"
+                            required
+                        >
+
+                    </div>
+
+
+                    <!-- Leaving Date -->
+
+                    <div class="col-md-4">
+
+                        <label class="form-label">
+                            Mess Leaving Date
+                        </label>
+
+                        <input
+                            type="date"
+                            name="mess_leaving_date"
+                            class="form-control"
+                            value="{{ student.mess_leaving_date|date:'Y-m-d' }}"
+                        >
+
+                    </div>
+
+
+                    <!-- Monthly Fee -->
+
+                    <div class="col-md-4">
+
+                        <label class="form-label">
+                            Monthly Mess Fee
+                        </label>
+
+                        <input
+                            type="number"
+                            name="monthly_fee"
+                            class="form-control"
+                            value="{{ student.monthly_fee|default:'2500' }}"
+                            min="0"
+                            step="0.01"
+                            required
+                        >
+
+                    </div>
+
+
+                </div>
+
+
+                <div class="mt-4 d-flex gap-2">
+
+                    <button
+                        type="submit"
+                        class="btn btn-primary"
+                    >
+                        {% if student %}
+                            Update Student
+                        {% else %}
+                            Add Student
+                        {% endif %}
+                    </button>
+
+                    <a
+                        href="{% url 'student_list' %}"
+                        class="btn btn-outline-secondary"
+                    >
+                        Cancel
+                    </a>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<footer class="footer mt-5">
+    <div class="container-fluid">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-2">
+            <div>
+                <strong>Hostel Mess Management</strong>
+                <div class="footer-sub">Mess operations, attendance, fees and expense management</div>
+            </div>
+            <div class="footer-sub">
+                © 2026 · Developed by <strong>Shreyansh Upadhyay</strong>
+            </div>
+        </div>
+    </div>
+</footer>
+
+</body>
+</html>

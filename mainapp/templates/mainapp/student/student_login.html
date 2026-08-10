@@ -1,0 +1,53 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Login | Hostel Mess Management</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'mainapp/css/mess.css' %}">
+</head>
+<body class="login-page d-flex flex-column">
+<main class="container flex-grow-1 d-flex align-items-center justify-content-center py-5">
+    <div class="col-11 col-sm-8 col-md-6 col-lg-4">
+        <div class="card login-card">
+            <div class="card-body p-4 p-lg-5">
+                <div class="login-brand">ST</div>
+                <h3 class="text-center fw-bold mb-1">Student Portal</h3>
+                <p class="text-center text-muted mb-4">Login to view your mess information</p>
+
+                {% if error %}
+                    <div class="alert alert-danger">{{ error }}</div>
+                {% endif %}
+
+                <form method="POST">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Student Login ID</label>
+                        <input type="text" name="login_id" class="form-control"
+                               placeholder="Enter your email" autocomplete="username" required>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Password</label>
+                        <input type="password" name="password" class="form-control"
+                               placeholder="Enter password" autocomplete="current-password" required>
+                    </div>
+                    <button class="btn btn-primary w-100 py-2">Student Login</button>
+                </form>
+
+                <div class="text-center mt-4">
+                    <a href="{% url 'admin_login' %}" class="small text-decoration-none">Admin Login</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+<footer class="footer">
+    <div class="text-center">
+        <strong>Hostel Mess Management</strong>
+        <div class="footer-sub">Developed by <strong>Shreyansh Upadhyay</strong> · © 2026</div>
+    </div>
+</footer>
+</body>
+</html>
