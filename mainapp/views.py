@@ -229,13 +229,10 @@ def update_bill_payment_values(bill):
 
 def send_student_credentials_email(student, username, password, reset=False):
     """
-    Send the student's portal credentials only to the email
-    address stored on that student record.
-
-    SMTP settings are read from Django settings/environment.
-    If email is not configured, the student is still created and
-    the admin can see the credentials on the credentials page.
+    Send student's portal credentials to the email
+    stored on the Student record.
     """
+
     subject = (
         "Your Hostel Mess Management Student Portal Credentials"
         if not reset
@@ -247,14 +244,18 @@ def send_student_credentials_email(student, username, password, reset=False):
 {"Your student account has been created successfully." if not reset else "Your student portal login has been reset successfully."}
 
 Student Details
----------------
+
 Name: {student.name}
 Student ID / Roll No.: {student.student_id}
 
 Student Portal Login
---------------------
+
 Username: {username}
 Initial Password: {password}
+
+Login Here ,
+https://hostel-mess-management-tbfp.onrender.com/student/login/
+
 
 Please log in and change your password after your first login.
 
@@ -262,9 +263,13 @@ Regards,
 Hostel Mess Management
 """
 
-    from_email = getattr(settings, "DEFAULT_FROM_EMAIL", None)
+    from_email = getattr(settings, "DEFAULT_FROM_EMAIL", "")
+
     if not from_email:
         return False, "Email sender is not configured."
+
+    if not student.email:
+        return False, "Student email is not configured."
 
     try:
         send_mail(
@@ -274,11 +279,12 @@ Hostel Mess Management
             [student.email],
             fail_silently=False,
         )
-        return True, ""
-    except Exception as exc:
-     print("EMAIL ERROR:", repr(exc))
-    return False, str(exc)
 
+        return True, ""
+
+    except Exception as exc:
+        print("EMAIL ERROR:", repr(exc))
+        return False, str(exc)
 
 
 def send_fee_payment_email(payment, updated=False):
@@ -427,7 +433,6 @@ Hostel Mess Management
 
     except Exception as exc:
         print("EMAIL ERROR:", repr(exc))
-    return False, str(exc)
     return False, str(exc)
 
 # ============================================================
