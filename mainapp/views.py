@@ -276,7 +276,8 @@ Hostel Mess Management
         )
         return True, ""
     except Exception as exc:
-        return False, str(exc)
+     print("EMAIL ERROR:", repr(exc))
+    return False, str(exc)
 
 
 
@@ -425,8 +426,9 @@ Hostel Mess Management
         return True, ""
 
     except Exception as exc:
-
-        return False, str(exc)
+        print("EMAIL ERROR:", repr(exc))
+    return False, str(exc)
+    return False, str(exc)
 
 # ============================================================
 # ADMIN LOGIN
