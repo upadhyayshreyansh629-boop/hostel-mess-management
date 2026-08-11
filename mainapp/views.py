@@ -10,11 +10,11 @@ from django.utils import timezone
 from django.db import transaction
 from django.db.models import Q, Sum
 from django.conf import settings
-from django.core.mail import send_mail
 from calendar import monthrange
 from decimal import Decimal
 from datetime import date, datetime, timedelta
 import resend
+import os
 from .models import (
     Student,
     FeePayment,
@@ -44,6 +44,51 @@ def admin_required(view_func):
 # ============================================================
 # HELPER FUNCTIONS
 # ============================================================
+
+
+# ============================================================
+# RESEND EMAIL HELPER
+# ============================================================
+
+def send_resend_email(to_email, subject, text):
+    """
+    Send email through Resend HTTPS API.
+
+    This avoids SMTP entirely, so Render Free's SMTP port
+    restriction does not affect email delivery.
+    """
+    api_key = os.environ.get("RESEND_API_KEY", "").strip()
+
+    if not api_key:
+        return False, "RESEND_API_KEY is not configured on Render."
+
+    if not to_email:
+        return False, "Recipient email is not configured."
+
+    from_email = os.environ.get(
+        "RESEND_FROM_EMAIL",
+        "onboarding@resend.dev"
+    ).strip()
+
+    if not from_email:
+        return False, "RESEND_FROM_EMAIL is not configured."
+
+    try:
+        resend.api_key = api_key
+
+        response = resend.Emails.send({
+            "from": from_email,
+            "to": [to_email],
+            "subject": subject,
+            "text": text,
+        })
+
+        print("RESEND EMAIL SUCCESS:", response)
+        return True, ""
+
+    except Exception as exc:
+        print("RESEND EMAIL ERROR:", repr(exc))
+        return False, str(exc)
 
 def money(value):
     """
@@ -229,14 +274,14 @@ def update_bill_payment_values(bill):
 
 def send_student_credentials_email(student, username, password, reset=False):
     """
-    Send student's portal credentials to the email
-    stored on the Student record.
+    Send student portal credentials through Resend API.
     """
 
     subject = (
         "Your Hostel Mess Management Student Portal Credentials"
         if not reset
-        else "Your Hostel Mess Management Password Has Been Reset"
+        else
+        "Your Hostel Mess Management Password Has Been Reset"
     )
 
     message = f"""Dear {student.name},
@@ -253,9 +298,8 @@ Student Portal Login
 Username: {username}
 Initial Password: {password}
 
-Login Here ,
+Login Here:
 https://hostel-mess-management-tbfp.onrender.com/student/login/
-
 
 Please log in and change your password after your first login.
 
@@ -263,77 +307,18 @@ Regards,
 Hostel Mess Management
 """
 
-    from_email = getattr(settings, "DEFAULT_FROM_EMAIL", "")
-
-    if not from_email:
-        return False, "Email sender is not configured."
-
-    if not student.email:
-        return False, "Student email is not configured."
-
-    try:
-        send_mail(
-            subject,
-            message,
-            from_email,
-            [student.email],
-            fail_silently=False,
-        )
-
-        return True, ""
-
-    except Exception as exc:
-        print("EMAIL ERROR:", repr(exc))
-        return False, str(exc)
-
+    return send_resend_email(
+        student.email,
+        subject,
+        message,
+    )
 
 def send_fee_payment_email(payment, updated=False):
     """
-    Send fee payment notification using Resend API.
-
-    This does NOT use Gmail SMTP.
-    It works through Resend's HTTPS API, so Render's
-    SMTP port restriction does not affect it.
+    Send fee payment notification through Resend HTTPS API.
     """
 
     student = payment.student
-
-    # --------------------------------------------------------
-    # RESEND API KEY
-    # --------------------------------------------------------
-
-    api_key = getattr(
-        settings,
-        "RESEND_API_KEY",
-        ""
-    )
-
-    if not api_key:
-        return False, "RESEND_API_KEY is not configured."
-
-    if not student.email:
-        return False, "Student email is not configured."
-
-    # --------------------------------------------------------
-    # FROM EMAIL
-    # --------------------------------------------------------
-    #
-    # For Resend's initial/testing setup, use:
-    # onboarding@resend.dev
-    #
-    # Later, after verifying your own domain, this can be
-    # changed to your own email/domain.
-    # --------------------------------------------------------
-
-    from_email = getattr(
-        settings,
-        "RESEND_FROM_EMAIL",
-        "onboarding@resend.dev"
-    )
-
-    # --------------------------------------------------------
-    # SUBJECT
-    # --------------------------------------------------------
 
     subject = (
         "Mess Fee Payment Updated - Hostel Mess Management"
@@ -349,29 +334,18 @@ def send_fee_payment_email(payment, updated=False):
     month_value = payment.month
 
     if isinstance(month_value, str):
-
         try:
-
             month_value = datetime.strptime(
                 month_value,
                 "%Y-%m-%d"
             ).date()
-
         except ValueError:
-
             month_value = None
 
     if month_value:
-
-        month_label = month_value.strftime(
-            "%B %Y"
-        )
-
+        month_label = month_value.strftime("%B %Y")
     else:
-
-        month_label = str(
-            payment.month
-        )
+        month_label = str(payment.month)
 
     # --------------------------------------------------------
     # PAYMENT DATE FORMATTING
@@ -380,44 +354,24 @@ def send_fee_payment_email(payment, updated=False):
     payment_date = payment.payment_date
 
     if isinstance(payment_date, str):
-
         try:
-
             payment_date = datetime.strptime(
                 payment_date,
                 "%Y-%m-%d"
             ).date()
-
         except ValueError:
-
             try:
-
                 payment_date = datetime.strptime(
                     payment_date,
                     "%Y-%m-%d %H:%M:%S"
                 )
-
             except ValueError:
-
                 payment_date = None
 
     if payment_date:
-
-        formatted_payment_date = payment_date.strftime(
-            "%d %B %Y"
-        )
-
+        formatted_payment_date = payment_date.strftime("%d %B %Y")
     else:
-
-        formatted_payment_date = str(
-            payment.payment_date
-        )
-
-    # --------------------------------------------------------
-    # STATUS
-    # --------------------------------------------------------
-
-    status = payment.status
+        formatted_payment_date = str(payment.payment_date)
 
     # --------------------------------------------------------
     # MONTHLY BILL
@@ -431,44 +385,24 @@ def send_fee_payment_email(payment, updated=False):
     balance = None
 
     if bill:
-
-        update_bill_payment_values(
-            bill
-        )
-
+        update_bill_payment_values(bill)
         bill.refresh_from_db()
-
-        balance = money(
-            bill.balance
-        )
-
-    # --------------------------------------------------------
-    # BALANCE LINE
-    # --------------------------------------------------------
+        balance = money(bill.balance)
 
     if balance is not None:
-
-        balance_line = (
-            f"Current Balance: ₹{balance:.2f}"
-        )
-
+        balance_line = f"Current Balance: ₹{balance:.2f}"
     else:
-
         balance_line = (
-            "Current Balance: "
-            "The monthly bill has not been generated yet."
+            "Current Balance: The monthly bill has not been generated yet."
         )
 
     # --------------------------------------------------------
     # EMAIL BODY
     # --------------------------------------------------------
 
-    message = f"""
-Dear {student.name},
+    message = f"""Dear {student.name},
 
-Your mess fee payment has been {
-    "updated" if updated else "recorded"
-} successfully.
+Your mess fee payment has been {"updated" if updated else "recorded"} successfully.
 
 Payment Details
 ----------------------------
@@ -478,49 +412,27 @@ Month: {month_label}
 Amount: ₹{money(payment.amount):.2f}
 Payment Date: {formatted_payment_date}
 Payment Method: {payment.payment_method}
-Status: {status}
+Status: {payment.status}
 
 {balance_line}
 
 You can log in to your Student Portal to view your
 payment and monthly bill details.
 
+Student Portal:
+https://hostel-mess-management-tbfp.onrender.com/student/login/
+
 Regards,
 Hostel Mess Management
 """
 
-    # --------------------------------------------------------
-    # RESEND API
-    # --------------------------------------------------------
+    return send_resend_email(
+        student.email,
+        subject,
+        message,
+    )
 
-    try:
 
-        resend.api_key = api_key
-
-        response = resend.Emails.send(
-            {
-                "from": from_email,
-                "to": [student.email],
-                "subject": subject,
-                "text": message,
-            }
-        )
-
-        print(
-            "RESEND EMAIL SUCCESS:",
-            response
-        )
-
-        return True, ""
-
-    except Exception as exc:
-
-        print(
-            "RESEND EMAIL ERROR:",
-            repr(exc)
-        )
-
-        return False, str(exc)
 # ============================================================
 # ADMIN LOGIN
 # ============================================================

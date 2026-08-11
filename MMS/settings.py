@@ -165,29 +165,19 @@ STORAGES = {
 }
 
 
+
 # ============================================================
-# EMAIL / GMAIL SMTP
+# RESEND EMAIL API
 # ============================================================
+# The application sends emails through Resend HTTPS API.
+# Render Free SMTP restrictions therefore do not affect email.
+RESEND_API_KEY = os.environ.get(
+    "RESEND_API_KEY",
+    ""
+).strip()
 
-EMAIL_BACKEND = os.environ.get(
-    "EMAIL_BACKEND",
-    "django.core.mail.backends.smtp.EmailBackend"
-)
+RESEND_FROM_EMAIL = os.environ.get(
+    "RESEND_FROM_EMAIL",
+    "onboarding@resend.dev"
+).strip()
 
-EMAIL_HOST = os.environ.get("EMAIL_HOST", "smtp.gmail.com")
-EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "587"))
-
-EMAIL_USE_TLS = os.environ.get(
-    "EMAIL_USE_TLS",
-    "True"
-).lower() == "true"
-
-EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
-EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
-
-DEFAULT_FROM_EMAIL = os.environ.get(
-    "DEFAULT_FROM_EMAIL",
-    EMAIL_HOST_USER
-)
-
-EMAIL_TIMEOUT = int(os.environ.get("EMAIL_TIMEOUT", "10"))
