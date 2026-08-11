@@ -289,8 +289,8 @@ Hostel Mess Management
 
 def send_fee_payment_email(payment, updated=False):
     """
-    Send a payment confirmation/notification only to the email
-    address belonging to the student whose payment was recorded.
+    Send a payment confirmation/notification only to the
+    student's registered email address.
     """
 
     student = payment.student
@@ -301,9 +301,10 @@ def send_fee_payment_email(payment, updated=False):
         else "Mess Fee Payment Received - Hostel Mess Management"
     )
 
-    # -----------------------------
-    # Month formatting
-    # -----------------------------
+    # ---------------------------------------------------------
+    # MONTH
+    # ---------------------------------------------------------
+
     month_value = payment.month
 
     if isinstance(month_value, str):
@@ -320,9 +321,10 @@ def send_fee_payment_email(payment, updated=False):
     else:
         month_label = str(payment.month)
 
-    # -----------------------------
-    # Payment date formatting
-    # -----------------------------
+    # ---------------------------------------------------------
+    # PAYMENT DATE
+    # ---------------------------------------------------------
+
     payment_date = payment.payment_date
 
     if isinstance(payment_date, str):
@@ -351,9 +353,10 @@ def send_fee_payment_email(payment, updated=False):
 
     status = payment.status
 
-    # -----------------------------
-    # Monthly bill
-    # -----------------------------
+    # ---------------------------------------------------------
+    # MONTHLY BILL
+    # ---------------------------------------------------------
+
     bill = MonthlyBill.objects.filter(
         student=student,
         month=payment.month
@@ -366,11 +369,6 @@ def send_fee_payment_email(payment, updated=False):
         bill.refresh_from_db()
         balance = money(bill.balance)
 
-    total_paid = get_paid_amount(
-        student,
-        payment.month
-    )
-
     balance_line = (
         f"Current Balance: ₹{balance:.2f}\n"
         if balance is not None
@@ -378,14 +376,19 @@ def send_fee_payment_email(payment, updated=False):
         "Current Balance: The monthly bill has not been generated yet.\n"
     )
 
-    # -----------------------------
-    # Email message
-    # -----------------------------
-    message = f"""Dear {student.name},
+    # ---------------------------------------------------------
+    # EMAIL MESSAGE
+    # ---------------------------------------------------------
 
-Your mess fee payment has been {"updated" if updated else "recorded"} successfully.
+    message = f"""
+Dear {student.name},
+
+Your mess fee payment has been {
+    "updated" if updated else "recorded"
+} successfully.
 
 Payment Details
+---------------
 
 Receipt No.: {payment.receipt_no}
 Month: {month_label}
@@ -393,7 +396,6 @@ Amount: ₹{money(payment.amount):.2f}
 Payment Date: {formatted_payment_date}
 Payment Method: {payment.payment_method}
 Status: {status}
-
 
 {balance_line}
 
@@ -404,9 +406,10 @@ Regards,
 Hostel Mess Management
 """
 
-    # -----------------------------
-    # Email configuration
-    # -----------------------------
+    # ---------------------------------------------------------
+    # EMAIL CONFIGURATION
+    # ---------------------------------------------------------
+
     from_email = getattr(
         settings,
         "DEFAULT_FROM_EMAIL",
@@ -419,13 +422,16 @@ Hostel Mess Management
     if not student.email:
         return False, "Student email is not configured."
 
-    try:
+    # ---------------------------------------------------------
+    # SEND EMAIL
+    # ---------------------------------------------------------
 
+    try:
         send_mail(
-            subject,
-            message,
-            from_email,
-            [student.email],
+            subject=subject,
+            message=message,
+            from_email=from_email,
+            recipient_list=[student.email],
             fail_silently=False,
         )
 
@@ -433,8 +439,7 @@ Hostel Mess Management
 
     except Exception as exc:
         print("EMAIL ERROR:", repr(exc))
-    return False, str(exc)
-
+        return False, str(exc)
 # ============================================================
 # ADMIN LOGIN
 # ============================================================
@@ -1134,6 +1139,10 @@ def fee_add(request):
 # EDIT FEE PAYMENT
 # ============================================================
 
+# ============================================================
+# EDIT FEE PAYMENT
+# ============================================================
+
 @admin_required
 def fee_edit(request, id):
 
@@ -1175,55 +1184,144 @@ def fee_edit(request, id):
             "payment_method"
         )
 
+        # ----------------------------------------------------
+        # BASIC VALIDATION
+        # ----------------------------------------------------
+
+        if not student_id:
+            messages.error(
+                request,
+                "Please select a student."
+            )
+
+            return redirect(
+                "fee_edit",
+                id=payment.id
+            )
+
+        if not month:
+            messages.error(
+                request,
+                "Please select a month."
+            )
+
+            return redirect(
+                "fee_edit",
+                id=payment.id
+            )
+
+        if not amount:
+            messages.error(
+                request,
+                "Please enter payment amount."
+            )
+
+            return redirect(
+                "fee_edit",
+                id=payment.id
+            )
+
+        # ----------------------------------------------------
+        # GET STUDENT
+        # ----------------------------------------------------
+
         student = get_object_or_404(
             Student,
             id=student_id
         )
 
+        # ----------------------------------------------------
+        # UPDATE PAYMENT
+        # ----------------------------------------------------
+
         payment.student = student
+
         payment.month = f"{month}-01"
+
         payment.amount = amount
-        payment.payment_date = payment_date
+
+        if payment_date:
+            payment.payment_date = payment_date
+
         payment.status = status
+
         payment.payment_method = payment_method
 
         payment.save()
 
-        # Notify the same student's registered email after an admin update.
-        email_sent, email_error = send_fee_payment_email(
-            payment,
-            updated=True
-        )
+        # ----------------------------------------------------
+        # SEND EMAIL
+        #
+        # IMPORTANT:
+        # Email failure must NOT cancel payment update.
+        # Render may block SMTP/network connection.
+        # ----------------------------------------------------
+
+        try:
+
+            email_sent, email_error = send_fee_payment_email(
+                payment,
+                updated=True
+            )
+
+        except Exception as exc:
+
+            print(
+                "FEE EMAIL ERROR:",
+                repr(exc)
+            )
+
+            email_sent = False
+
+            email_error = str(exc)
+
+        # ----------------------------------------------------
+        # SUCCESS / WARNING MESSAGE
+        # ----------------------------------------------------
 
         if email_sent:
+
             messages.success(
                 request,
                 f"Payment {payment.receipt_no} updated successfully. "
                 f"Notification sent to {student.email}."
             )
+
         else:
+
             messages.warning(
                 request,
                 f"Payment {payment.receipt_no} updated successfully, "
-                f"but email could not be sent: {email_error}"
+                f"but email could not be sent. "
+                f"Payment data is safe."
             )
+
+            print(
+                "EMAIL NOT SENT:",
+                email_error
+            )
+
+        # ----------------------------------------------------
+        # REDIRECT
+        # ----------------------------------------------------
 
         return redirect(
             "fee_list"
         )
+
+    # ========================================================
+    # EDIT FORM
+    # ========================================================
 
     return render(
         request,
         "mainapp/fees/fee_form.html",
         {
             "students": students,
-
             "payment": payment,
-
             "edit_mode": True,
         }
     )
-
 
 # ============================================================
 # ATTENDANCE
